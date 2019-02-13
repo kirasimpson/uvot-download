@@ -33,7 +33,7 @@ def download_heasarc(heasarc_files, unzip=True):
 
         if len(rows_list) == 1:
             print("No observations of " + gal_name + " were found in HEASARC.")
-            dir_path = '*/*/*/' + gal
+            dir_path = '*/*/*/' + gal_name
             r = glob.glob(dir_path)
             for i in r:
                 os.remove(i)
@@ -54,6 +54,36 @@ def download_heasarc(heasarc_files, unzip=True):
                                  skiprows=3, comments='B',
                                  usecols = tuple(np.arange(0,len(table_cols))+1) ).tolist()
         id_list = list()
+        
+        
+        inter_list = False #assumes there are no new observations until proven wrong
+
+        data_file_exists = glob.glob(filename) #data.dat only exists if download has been run before
+        current_obslist = glob.glob('000*') #make a comparison list that contains all data folders corresponding with a certain obs. ID that have already been downloaded
+
+        if len(data_file_exists) != 0: #condition: data.dat file exists
+
+            new_obslist = np.loadtxt(filename, dtype = 'str', delimiter = '|',
+                                 skiprows=3, comments='B',
+                                 usecols = tuple(np.arange(0,len(table_cols))+1)).tolist() #load new data.dat as a new comparison list
+
+            #compare new list to original list
+            if len(new_obslist) != len(current_obslist): #so this will only happen if there is new stuff to add to the mix, otherwise it'll go down the list
+                inter_list = list()
+                for entry in new_obslist:
+                    if entry[0] in current_obslist:
+                        inter_list.append(entry)
+
+                for entry in inter_list:
+                    new_obslist.remove(entry)
+                    #now write this into the new download script
+                obslist = new_obslist
+
+        else:
+            #else the file doesn't exist, so make the first copy
+            obslist = np.loadtxt(filename, dtype = 'str', delimiter = '|',
+                                 skiprows=3, comments='B',
+                                 usecols = tuple(np.arange(0,len(table_cols))+1)).tolist()
 
         #if obslist is empty:
         #    continue to next obj in obj_list, though if there's nothing that comes next, will it just end the program?
